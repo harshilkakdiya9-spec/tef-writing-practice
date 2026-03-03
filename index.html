@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>TEF Canada - Expression écrite Simulateur</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f3f7;
+      color: #222;
+    }
+    .app-shell {
+      max-width: 1100px;
+      margin: 20px auto;
+      background: #fff;
+      border: 1px solid #d0d3dd;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      height: 90vh;
+    }
+
+    /* HEADER / TIMER BAR */
+    .header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      border-bottom: 1px solid #d0d3dd;
+      background: #f7f8fb;
+      gap: 12px;
+    }
+    .logo-title {
+      font-weight: bold;
+      font-size: 14px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #555;
+      white-space: nowrap;
+    }
+    .timer-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .timer-box {
+      font-family: monospace;
+      font-size: 16px;
+      font-weight: bold;
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid #c0c4d0;
+      background: #fff;
+      min-width: 90px;
+      text-align: center;
+    }
+    .timer-box.warning { background: #fff4e5; border-color: #f0a000; }
+    .timer-box.danger  { background: #ffe5e5; border-color: #cc0000; }
+    .timer-label {
+      font-size: 11px;
+      color: #555;
+      text-align: center;
+    }
+    .timer-input {
+      width: 52px;
+      padding: 2px 4px;
+      font-size: 11px;
+      border-radius: 3px;
+      border: 1px solid #c0c4d0;
+      text-align: right;
+    }
+    .timer-btn {
+      border-radius: 3px;
+      border: 1px solid #c0c4d0;
+      background: #fff;
+      padding: 3px 8px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .timer-btn.primary {
+      border-color: #0056b3;
+      background: #0056b3;
+      color: #fff;
+    }
+    .timer-btn:disabled { opacity: 0.6; cursor: default; }
+
+    /* MAIN CONTENT STACKED */
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      padding: 12px 18px 16px;
+      gap: 10px;
+      overflow: hidden;
+    }
+
+    /* SECTION TITLE + WORD REQUIREMENT */
+    .section-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .section-label {
+      font-size: 13px;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: #555;
+    }
+    .word-requirement {
+      font-size: 12px;
+      color: #666;
+    }
+
+    /* INSTRUCTION + EDITABLE TOPIC */
+    .instruction-wrapper {
+      border-radius: 4px;
+      border: 1px solid #d0d3dd;
+      background: #fafbff;
+      padding: 10px 12px;
+      font-size: 13px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      position: relative;
+    }
+    .instruction-view {
+      padding-right: 80px;
+    }
+    .instruction-edit-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      font-size: 11px;
+      border-radius: 3px;
+      border: 1px solid #c0c4d0;
+      background: #fff;
+      padding: 3px 6px;
+      cursor: pointer;
+    }
+    .topic-edit-area {
+      margin-top: 8px;
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .topic-input {
+      width: 100%;
+      padding: 6px 8px;
+      font-size: 13px;
+      border-radius: 3px;
+      border: 1px solid #c0c4d0;
+      resize: vertical;
+      min-height: 60px;
+    }
+    .topic-edit-buttons {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+    }
+    .topic-btn {
+      border-radius: 3px;
+      border: 1px solid #c0c4d0;
+      background: #fff;
+      padding: 3px 8px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .topic-btn.primary {
+      border-color: #0056b3;
+      background: #0056b3;
+      color: #fff;
+    }
+
+    /* ACCENT KEYBOARD */
+    .accent-panel {
+      margin-top: 6px;
+      border-radius: 4px;
+      border: 1px solid #d0d3dd;
+      background: #fff;
+      padding: 6px 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .accent-btn {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 2px 4px;
+      min-width: 22px;
+      text-align: center;
+    }
+
+    /* WRITING AREA + WORD COUNTER */
+    .editor-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+      min-height: 0;
+    }
+    .text-area {
+      flex: 1;
+      width: 100%;
+      border-radius: 4px;
+      border: 1px solid #c0c4d0;
+      padding: 10px 12px;
+      font-size: 14px;
+      line-height: 1.5;
+      resize: none;
+      outline: none;
+    }
+    .word-info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 12px;
+      margin-top: 2px;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .word-counter {
+      font-size: 12px;
+      color: #444;
+    }
+    .word-status {
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .status-low    { color: #cc0000; }
+    .status-good   { color: #008000; }
+    .status-high   { color: #c07000; }
+
+    /* BOTTOM BAR */
+    .bottom-bar {
+      padding: 10px 18px;
+      border-top: 1px solid #d0d3dd;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      background: #f7f8fb;
+    }
+    .primary-button {
+      border-radius: 4px;
+      border: 1px solid #0056b3;
+      background: #0056b3;
+      color: #fff;
+      padding: 8px 16px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .primary-button:disabled { opacity: 0.6; cursor: default; }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .overlay-content {
+      background: #fff;
+      padding: 20px 24px;
+      border-radius: 4px;
+      max-width: 420px;
+      text-align: center;
+      border: 1px solid #d0d3dd;
+    }
+    .overlay-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    .overlay-text {
+      font-size: 13px;
+      margin-bottom: 16px;
+      color: #444;
+    }
+    .overlay button {
+      border-radius: 4px;
+      border: 1px solid #0056b3;
+      background: #0056b3;
+      color: #fff;
+      padding: 6px 14px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 900px) {
+      .app-shell { height: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- HEADER / TIMER -->
+    <div class="header-bar">
+      <div class="logo-title">TEF Canada &mdash; Expression écrite</div>
+
+      <div class="timer-controls">
+        <div>
+          <div class="timer-box" id="timer">25:00</div>
+          <div class="timer-label" id="timerSectionLabel">Section A (minuteur)</div>
+        </div>
+        <div>
+          <div class="timer-label">Durée A (min)</div>
+          <input id="timeAInput" class="timer-input" type="number" min="1" value="25" />
+        </div>
+        <div>
+          <div class="timer-label">Durée B (min)</div>
+          <input id="timeBInput" class="timer-input" type="number" min="1" value="35" />
+        </div>
+        <button class="timer-btn primary" id="setTimeBtn">Appliquer</button>
+        <button class="timer-btn" id="startBtn">Start</button>
+        <button class="timer-btn" id="pauseBtn">Pause</button>
+        <button class="timer-btn" id="restartBtn">Restart</button>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+      <div class="section-header-row">
+        <div class="section-label" id="sectionLabel"></div>
+        <div class="word-requirement" id="wordRequirement"></div>
+      </div>
+
+      <!-- Instructions + editable topic -->
+      <div class="instruction-wrapper">
+        <div class="instruction-view" id="instructionView"></div>
+        <button class="instruction-edit-btn" id="editTopicBtn">Modifier</button>
+
+        <div class="topic-edit-area" id="topicEditArea">
+          <textarea id="topicInput" class="topic-input"></textarea>
+          <div class="topic-edit-buttons">
+            <button class="topic-btn" id="cancelTopicBtn">Annuler</button>
+            <button class="topic-btn primary" id="saveTopicBtn">Enregistrer</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Accent keyboard -->
+      <div class="accent-panel" id="accentPanel">
+        <!-- Lowercase -->
+        <button class="accent-btn" data-char="à">à</button>
+        <button class="accent-btn" data-char="â">â</button>
+        <button class="accent-btn" data-char="æ">æ</button>
+        <button class="accent-btn" data-char="ç">ç</button>
+        <button class="accent-btn" data-char="é">é</button>
+        <button class="accent-btn" data-char="è">è</button>
+        <button class="accent-btn" data-char="ê">ê</button>
+        <button class="accent-btn" data-char="ë">ë</button>
+        <button class="accent-btn" data-char="î">î</button>
+        <button class="accent-btn" data-char="ï">ï</button>
+        <button class="accent-btn" data-char="ô">ô</button>
+        <button class="accent-btn" data-char="œ">œ</button>
+        <button class="accent-btn" data-char="ù">ù</button>
+        <button class="accent-btn" data-char="û">û</button>
+        <button class="accent-btn" data-char="ü">ü</button>
+        <!-- Uppercase -->
+        <button class="accent-btn" data-char="À">À</button>
+        <button class="accent-btn" data-char="Â">Â</button>
+        <button class="accent-btn" data-char="Æ">Æ</button>
+        <button class="accent-btn" data-char="Ç">Ç</button>
+        <button class="accent-btn" data-char="É">É</button>
+        <button class="accent-btn" data-char="È">È</button>
+        <button class="accent-btn" data-char="Ê">Ê</button>
+        <button class="accent-btn" data-char="Ë">Ë</button>
+        <button class="accent-btn" data-char="Î">Î</button>
+        <button class="accent-btn" data-char="Ï">Ï</button>
+        <button class="accent-btn" data-char="Ô">Ô</button>
+        <button class="accent-btn" data-char="Œ">Œ</button>
+        <button class="accent-btn" data-char="Ù">Ù</button>
+        <button class="accent-btn" data-char="Û">Û</button>
+        <button class="accent-btn" data-char="Ü">Ü</button>
+      </div>
+
+      <!-- Writing area + word info -->
+      <div class="editor-wrapper">
+        <textarea id="answerBox" class="text-area"></textarea>
+        <div class="word-info-row">
+          <div class="word-counter" id="wordCounter">Mots : 0</div>
+          <div class="word-status" id="wordStatus"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom bar -->
+    <div class="bottom-bar">
+      <button class="primary-button" id="submitBtn">Terminer / Soumettre</button>
+    </div>
+  </div>
+
+  <!-- Overlay for end of test -->
+  <div class="overlay" id="endOverlay">
+    <div class="overlay-content">
+      <div class="overlay-title" id="overlayTitle">Fin de l'épreuve</div>
+      <div class="overlay-text" id="overlayText">
+        L'épreuve d'expression écrite est terminée.
+      </div>
+      <button id="closeOverlay">OK</button>
+    </div>
+  </div>
+
+  <script>
+    // SECTION DEFINITIONS
+    const SECTIONS = {
+      A: {
+        label: 'Section A — Fait divers',
+        minWords: 80,
+        maxWords: 120, // zone recommandée
+        requirement: 'Minimum 80 mots (recommandé : 80–120)',
+        instruction:
+          "Vous lisez le début d'un fait divers dans un journal local. "+
+          "Complétez l'article de manière logique et cohérente (au moins 80 mots).\n\n"+
+          "Début (vous pouvez modifier le texte dans l'éditeur de sujet) :\n"+
+          "Hier soir, vers 22 heures, un incident inhabituel s'est produit dans le centre de votre ville…"
+      },
+      B: {
+        label: 'Section B — Lettre au journal',
+        minWords: 200,
+        maxWords: 260, // zone recommandée
+        requirement: 'Minimum 200 mots (recommandé : 200–260)',
+        instruction:
+          "Vous lisez la phrase suivante dans un journal. "+
+          "Écrivez une lettre formelle au rédacteur en chef, en donnant votre opinion et au moins trois arguments (au moins 200 mots).\n\n"+
+          "Phrase (vous pouvez modifier le texte dans l'éditeur de sujet) :\n"+
+          "« La voiture individuelle n'a plus sa place dans les grandes villes modernes. »"
+      }
+    };
+
+    // TIMER STATE
+    let currentSectionKey = 'A';
+    let remainingSeconds = 25 * 60;
+    let initialSecondsA = 25 * 60;
+    let initialSecondsB = 35 * 60;
+    let timerId = null;
+    let isRunning = false;
+
+    // TEXT STORAGE
+    const answers = { A: '', B: '' };
+    const topics = { A: SECTIONS.A.instruction, B: SECTIONS.B.instruction };
+
+    // DOM ELEMENTS
+    const timerEl = document.getElementById('timer');
+    const timerSectionLabelEl = document.getElementById('timerSectionLabel');
+    const timeAInput = document.getElementById('timeAInput');
+    const timeBInput = document.getElementById('timeBInput');
+    const setTimeBtn = document.getElementById('setTimeBtn');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const restartBtn = document.getElementById('restartBtn');
+
+    const sectionLabelEl = document.getElementById('sectionLabel');
+    const wordRequirementEl = document.getElementById('wordRequirement');
+    const instructionViewEl = document.getElementById('instructionView');
+    const editTopicBtn = document.getElementById('editTopicBtn');
+    const topicEditArea = document.getElementById('topicEditArea');
+    const topicInputEl = document.getElementById('topicInput');
+    const cancelTopicBtn = document.getElementById('cancelTopicBtn');
+    const saveTopicBtn = document.getElementById('saveTopicBtn');
+
+    const accentPanel = document.getElementById('accentPanel');
+    const answerBoxEl = document.getElementById('answerBox');
+    const wordCounterEl = document.getElementById('wordCounter');
+    const wordStatusEl = document.getElementById('wordStatus');
+    const submitBtn = document.getElementById('submitBtn');
+
+    const endOverlay = document.getElementById('endOverlay');
+    const overlayTitleEl = document.getElementById('overlayTitle');
+    const overlayTextEl = document.getElementById('overlayText');
+    const closeOverlayBtn = document.getElementById('closeOverlay');
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60).toString().padStart(2, '0');
+      const s = (sec % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function getCurrentInitialSeconds() {
+      return currentSectionKey === 'A' ? initialSecondsA : initialSecondsB;
+    }
+
+    function updateTimerDisplay() {
+      timerEl.textContent = formatTime(remainingSeconds);
+      timerEl.classList.remove('warning', 'danger');
+      const total = getCurrentInitialSeconds();
+      if (remainingSeconds <= total * 0.25 && remainingSeconds > total * 0.1) {
+        timerEl.classList.add('warning');
+      } else if (remainingSeconds <= total * 0.1) {
+        timerEl.classList.add('danger');
+      }
+    }
+
+    function tickTimer() {
+      if (!isRunning) return;
+      remainingSeconds--;
+      if (remainingSeconds <= 0) {
+        remainingSeconds = 0;
+        updateTimerDisplay();
+        stopTimer();
+        autoFinishSection();
+        return;
+      }
+      updateTimerDisplay();
+    }
+
+    function startTimer() {
+      if (!timerId) {
+        timerId = setInterval(tickTimer, 1000);
+      }
+      isRunning = true;
+    }
+
+    function stopTimer() {
+      isRunning = false;
+    }
+
+    function resetTimerForSection(sectionKey) {
+      remainingSeconds = sectionKey === 'A' ? initialSecondsA : initialSecondsB;
+      updateTimerDisplay();
+      timerSectionLabelEl.textContent =
+        sectionKey === 'A' ? 'Section A (minuteur)' : 'Section B (minuteur)';
+    }
+
+    function applyTimeSettings() {
+      const a = parseInt(timeAInput.value, 10);
+      const b = parseInt(timeBInput.value, 10);
+      if (Number.isFinite(a) && a > 0) {
+        initialSecondsA = a * 60;
+      }
+      if (Number.isFinite(b) && b > 0) {
+        initialSecondsB = b * 60;
+      }
+      resetTimerForSection(currentSectionKey);
+    }
+
+    function countWords(text) {
+      const trimmed = text.trim();
+      if (!trimmed) return 0;
+      return trimmed.split(/\s+/).length;
+    }
+
+    function updateWordInfo() {
+      const section = SECTIONS[currentSectionKey];
+      const words = countWords(answerBoxEl.value);
+      wordCounterEl.textContent = `Mots : ${words}`;
+
+      wordStatusEl.className = 'word-status';
+      if (words === 0) {
+        wordStatusEl.textContent = '';
+      } else if (words < section.minWords) {
+        wordStatusEl.textContent = `En dessous du minimum (${section.minWords})`;
+        wordStatusEl.classList.add('status-low');
+      } else if (words <= section.maxWords) {
+        wordStatusEl.textContent = 'Zone recommandée';
+        wordStatusEl.classList.add('status-good');
+      } else {
+        wordStatusEl.textContent = `Au-dessus de la zone recommandée (> ${section.maxWords})`;
+        wordStatusEl.classList.add('status-high');
+      }
+    }
+
+    function loadSection(sectionKey) {
+      // Save current text/topic
+      answers[currentSectionKey] = answerBoxEl.value;
+      topics[currentSectionKey] = instructionViewEl.textContent;
+
+      currentSectionKey = sectionKey;
+
+      const section = SECTIONS[sectionKey];
+      sectionLabelEl.textContent = section.label;
+      wordRequirementEl.textContent = section.requirement;
+      instructionViewEl.textContent = topics[sectionKey] || section.instruction;
+
+      answerBoxEl.value = answers[sectionKey] || '';
+      updateWordInfo();
+
+      resetTimerForSection(sectionKey);
+    }
+
+    function disableAll() {
+      stopTimer();
+      if (timerId) {
+        clearInterval(timerId);
+        timerId = null;
+      }
+      answerBoxEl.disabled = true;
+      submitBtn.disabled = true;
+      editTopicBtn.disabled = true;
+      timeAInput.disabled = true;
+      timeBInput.disabled = true;
+      setTimeBtn.disabled = true;
+      startBtn.disabled = true;
+      pauseBtn.disabled = true;
+      restartBtn.disabled = true;
+      Array.from(accentPanel.querySelectorAll('button')).forEach(b => (b.disabled = true));
+    }
+
+    function autoFinishSection() {
+      if (currentSectionKey === 'A') {
+        loadSection('B');
+      } else {
+        disableAll();
+        overlayTitleEl.textContent = 'Fin du temps';
+        overlayTextEl.textContent =
+          "Le temps est écoulé. L'épreuve est terminée. Vous ne pouvez plus modifier votre texte.";
+        endOverlay.style.display = 'flex';
+      }
+    }
+
+    function manualFinishSection() {
+      const section = SECTIONS[currentSectionKey];
+      const words = countWords(answerBoxEl.value);
+      const confirmMessage =
+        currentSectionKey === 'A'
+          ? "Terminer la section A et passer à la section B ? Vous ne pourrez plus modifier ce texte."
+          : "Terminer la section B et terminer complètement l'épreuve ?";
+
+      if (!confirm(confirmMessage)) return;
+
+      if (currentSectionKey === 'A') {
+        answers.A = answerBoxEl.value;
+        overlayTitleEl.textContent = 'Section A terminée';
+        overlayTextEl.textContent =
+          "Vous passez maintenant à la section B. Dans l'examen réel, vous ne pourriez plus modifier la section A.";
+        endOverlay.style.display = 'flex';
+        closeOverlayBtn.onclick = () => {
+          endOverlay.style.display = 'none';
+          loadSection('B');
+          startBtn.click(); // auto-start B; remove if you want manual start
+        };
+      } else {
+        answers.B = answerBoxEl.value;
+        disableAll();
+        overlayTitleEl.textContent = 'Épreuve terminée';
+        overlayTextEl.textContent =
+          `Vous avez terminé la section B. Total mots section B : ${words}. L'épreuve est maintenant terminée.`;
+        endOverlay.style.display = 'flex';
+        closeOverlayBtn.onclick = () => {
+          endOverlay.style.display = 'none';
+        };
+      }
+    }
+
+    // EVENT LISTENERS
+    setTimeBtn.addEventListener('click', () => {
+      applyTimeSettings();
+    });
+
+    startBtn.addEventListener('click', () => {
+      startTimer();
+    });
+
+    pauseBtn.addEventListener('click', () => {
+      stopTimer();
+    });
+
+    restartBtn.addEventListener('click', () => {
+      stopTimer();
+      resetTimerForSection(currentSectionKey);
+    });
+
+    answerBoxEl.addEventListener('input', updateWordInfo);
+
+    accentPanel.addEventListener('click', e => {
+      if (e.target.dataset && e.target.dataset.char && !answerBoxEl.disabled) {
+        const ch = e.target.dataset.char;
+        const start = answerBoxEl.selectionStart;
+        const end = answerBoxEl.selectionEnd;
+        const value = answerBoxEl.value;
+        answerBoxEl.value = value.slice(0, start) + ch + value.slice(end);
+        const newPos = start + ch.length;
+        answerBoxEl.selectionStart = answerBoxEl.selectionEnd = newPos;
+        answerBoxEl.focus();
+        updateWordInfo();
+      }
+    });
+
+    submitBtn.addEventListener('click', manualFinishSection);
+
+    editTopicBtn.addEventListener('click', () => {
+      topicInputEl.value = instructionViewEl.textContent;
+      topicEditArea.style.display = 'flex';
+    });
+
+    cancelTopicBtn.addEventListener('click', () => {
+      topicEditArea.style.display = 'none';
+    });
+
+    saveTopicBtn.addEventListener('click', () => {
+      const newText = topicInputEl.value.trim();
+      if (newText) {
+        instructionViewEl.textContent = newText;
+        topics[currentSectionKey] = newText;
+      }
+      topicEditArea.style.display = 'none';
+    });
+
+    closeOverlayBtn.addEventListener('click', () => {
+      endOverlay.style.display = 'none';
+    });
+
+    // INIT
+    function init() {
+      loadSection('A');
+    }
+
+    init();
+  </script>
+</body>
+</html>
